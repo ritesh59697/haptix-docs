@@ -1,0 +1,64 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "name": "Haptix — Solana Mobile",
+  "colors": {
+    "primary": "#4F6BFF",
+    "light": "#4F6BFF",
+    "dark": "#6C8CFF"
+  },
+  "favicon": "/favicon.ico",
+  "logo": {
+    "light": "/assets/logotext-light.png",
+    "dark": "/assets/logotext-dark.png"
+  },
+  "topbarLinks": [
+    {
+      "name": "Support",
+      "url": "mailto:support@haptix.com"
+    }
+  ],
+  "topbarCtaButton": {
+    "name": "Get Started",
+    "url": "https://haptix-passkeys.vercel.app"
+  },
+  "anchors": [
+    {
+      "name": "GitHub",
+      "icon": "github",
+      "url": "https://github.com/ritesh59697/haptix-mobile-app"
+    },
+    {
+      "name": "Twitter",
+      "icon": "twitter",
+      "url": "https://twitter.com/haptix"
+    }
+  ],
+  "navigation": [
+    {
+      "group": "Get Started",
+      "pages": [
+        "introduction",
+        "quickstart",
+        "architecture"
+      ]
+    },
+    {
+      "group": "Solana Mobile & Seeker",
+      "pages": [
+        "solana/architecture",
+        "solana/vault-mode",
+        "solana/recovery"
+      ]
+    },
+    {
+      "group": "Autonomous AI Agents",
+      "pages": [
+        "sdk/overview"
+      ]
+    }
+  ],
+  "footerSocials": {
+    "twitter": "https://twitter.com/haptix",
+    "github": "https://github.com/ritesh59697/haptix"
+  }
+}
