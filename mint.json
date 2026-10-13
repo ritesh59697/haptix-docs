@@ -27,6 +27,11 @@
   },
   "anchors": [
     {
+      "name": "Download APK (v1.0.1)",
+      "icon": "android",
+      "url": "https://github.com/ritesh59697/haptix-mobile-app/releases/download/v1.0.1/haptix-wallet.apk"
+    },
+    {
       "name": "Live Web App",
       "icon": "globe",
       "url": "https://haptix-passkeys.vercel.app"

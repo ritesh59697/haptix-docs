@@ -69,6 +69,10 @@
   "navbar": {
     "links": [
       {
+        "label": "Download APK (v1.0.1)",
+        "href": "https://github.com/ritesh59697/haptix-mobile-app/releases/download/v1.0.1/haptix-wallet.apk"
+      },
+      {
         "label": "Support",
         "href": "https://t.me/ritesh5969"
       },
