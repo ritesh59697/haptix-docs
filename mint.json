@@ -14,7 +14,11 @@
   "topbarLinks": [
     {
       "name": "Support",
-      "url": "mailto:support@haptix.com"
+      "url": "https://t.me/ritesh5969"
+    },
+    {
+      "name": "Contact",
+      "url": "mailto:riteshwork5969@gmail.com"
     }
   ],
   "topbarCtaButton": {

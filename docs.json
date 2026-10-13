@@ -19,7 +19,8 @@
             "pages": [
               "introduction",
               "quickstart",
-              "architecture"
+              "architecture",
+              "security"
             ]
           },
           {
@@ -34,6 +35,13 @@
             "group": "Autonomous AI Agents",
             "pages": [
               "sdk/overview"
+            ]
+          },
+          {
+            "group": "Legal & Security",
+            "pages": [
+              "terms",
+              "privacy"
             ]
           }
         ]
@@ -62,12 +70,16 @@
     "links": [
       {
         "label": "Support",
-        "href": "mailto:support@haptix.com"
+        "href": "https://t.me/ritesh5969"
+      },
+      {
+        "label": "Contact",
+        "href": "mailto:riteshwork5969@gmail.com"
       }
     ],
     "primary": {
       "type": "button",
-      "label": "Get Started",
+      "label": "Live Web App",
       "href": "https://haptix-passkeys.vercel.app"
     }
   },
