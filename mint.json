@@ -18,10 +18,15 @@
     }
   ],
   "topbarCtaButton": {
-    "name": "Get Started",
+    "name": "Live Web App",
     "url": "https://haptix-passkeys.vercel.app"
   },
   "anchors": [
+    {
+      "name": "Live Web App",
+      "icon": "globe",
+      "url": "https://haptix-passkeys.vercel.app"
+    },
     {
       "name": "GitHub",
       "icon": "github",
@@ -39,7 +44,8 @@
       "pages": [
         "introduction",
         "quickstart",
-        "architecture"
+        "architecture",
+        "security"
       ]
     },
     {
@@ -54,6 +60,13 @@
       "group": "Autonomous AI Agents",
       "pages": [
         "sdk/overview"
+      ]
+    },
+    {
+      "group": "Legal & Security",
+      "pages": [
+        "terms",
+        "privacy"
       ]
     }
   ],
