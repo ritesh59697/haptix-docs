@@ -38,8 +38,9 @@
             ]
           },
           {
-            "group": "Legal & Security",
+            "group": "Support & Legal",
             "pages": [
+              "contact",
               "terms",
               "privacy"
             ]
@@ -73,12 +74,8 @@
         "href": "https://github.com/ritesh59697/haptix-mobile-app/releases/download/v1.0.1/haptix-wallet.apk"
       },
       {
-        "label": "Support",
-        "href": "https://t.me/ritesh5969"
-      },
-      {
         "label": "Contact",
-        "href": "mailto:riteshwork5969@gmail.com"
+        "href": "/contact"
       }
     ],
     "primary": {

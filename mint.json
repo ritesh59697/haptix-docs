@@ -13,12 +13,8 @@
   },
   "topbarLinks": [
     {
-      "name": "Support",
-      "url": "https://t.me/ritesh5969"
-    },
-    {
       "name": "Contact",
-      "url": "mailto:riteshwork5969@gmail.com"
+      "url": "/contact"
     }
   ],
   "topbarCtaButton": {
@@ -72,8 +68,9 @@
       ]
     },
     {
-      "group": "Legal & Security",
+      "group": "Support & Legal",
       "pages": [
+        "contact",
         "terms",
         "privacy"
       ]
