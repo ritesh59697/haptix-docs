@@ -53,7 +53,18 @@ When enabling Vault Mode during onboarding or in Settings, you can choose how yo
 | :--- | :--- | :--- |
 | **Everyday Mode** | Platform Authenticator | Both keys on the same phone. Fast setup for beginners. |
 | **Hardware Key (OneKey / YubiKey)** | Cross-Platform FIDO2 (NFC/USB) | Tap your physical hardware key on the back of the phone to approve vault transfers. |
-| **Laptop / Desktop (Touch ID)** | Hybrid FIDO2 / QR Pairing | Sign high-value transfers using your MacBook Secure Enclave or desktop Windows Hello. |
+| **Laptop / Desktop (Web Vault)** | WebAuthn Browser Portal | Co-sign high-value transfers using your MacBook Touch ID or Windows Hello via the Web Vault. |
+
+---
+
+## Cross-Device Co-Signing (Web Vault & Cloud Relay)
+
+Haptix provides a zero-install cross-device co-signing loop between your mobile device and secondary computer:
+
+1. **Transaction Staging**: When a transfer exceeds your daily spend threshold, the mobile app creates a signing challenge and queues it to the **Haptix Cloud Relay** (`https://haptix-relay.onrender.com`).
+2. **Web Vault Approval**: Open the [Haptix Web Vault](https://haptix-passkeys.vercel.app/vault.html) on your laptop. The portal detects your pending transaction and prompts for your **Mac Touch ID** or **Windows Hello** biometric passkey.
+3. **Automated Signature Relay**: The signed P-256 assertion is returned to the mobile app in real time via the relay, completing the 2-of-2 on-chain bundle.
+4. **Offline Clipboard Fallback**: If the relay is unreachable or you are offline, the Web Vault provides a compact signature code that can be copied and pasted directly into the mobile app to execute the transaction.
 
 ---
 

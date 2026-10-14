@@ -1,97 +1,67 @@
 ---
 title: "Security Architecture"
-description: "In-depth cryptographic security specifications, 2-of-2 hardware quorums, and Solana runtime verification."
+description: "In-depth cryptographic security specifications, key hierarchy, WYSIWYS inspection, and cluster replay prevention."
 ---
 
-# Security Architecture & Cryptographic Verification
+# Security Architecture & Threat Model
 
-The standard pattern in crypto is storing a single Ed25519 private key in memory or persistent storage. If malicious software or an attacker gains device access, 100% of wallet funds are at risk.
+Haptix replaces single private key storage with an **on-chain Anchor smart account architecture** where signing rights are bound directly to hardware security enclaves using NIST P-256 (secp256r1) WebAuthn credentials.
 
-Haptix replaces private key storage with an **on-chain Anchor smart account architecture** where signing rights are bound to hardware security enclaves using NIST P-256 (secp256r1) WebAuthn credentials.
-
----
-
-## The 4-Layer Solana Authority Model
-
-```text
-                     HAPTIX SMART WALLET PDA
-                                │
-        ┌───────────────────────┴───────────────────────┐
-        │                                               │
-   HUMAN AUTHORITY                               AGENT AUTHORITY
-        │                                               │
-  Device Passkeys                               Scoped Session Keys
-  (NIST P-256 WebAuthn)                         (Ed25519 / Curve25519)
-        │                                               │
-        └───────────────────────┬───────────────────────┘
-                                ↓
-                 ON-CHAIN ANCHOR POLICY ENGINE
-                                │
-        ┌───────────────────────┼───────────────────────┐
-        ↓                       ↓                       ↓
-   TIER 1: ALLOW          TIER 2: ESCALATE        TIER 3: REVERT
- (Single Biometric)      (2-of-2 Quorum)         (Breaches Policy)
-        │                       │                       │
-        ↓                       ↓                       ↓
-  ≤ Spending Limit         > Spending Limit        Over Hard Cap /
-   Executes 1-Tap         Requires Phone +         Frozen on-chain
-                          Secondary Key
-```
+This eliminates the two primary vulnerabilities in crypto:
+1. **Seed Phrase Leakage / Phishing**: Private keys never leave the phone's hardware enclave (Android Keystore / StrongBox and Apple Secure Enclave).
+2. **Single-Signature Catastrophic Drain**: Transfers exceeding user-defined spend limits mathematically require a 2-of-2 hardware quorum across independent devices.
 
 ---
 
-## On-Chain Cryptographic Verification
+## 1. Key Hierarchy & Authority Separation
 
-Solana validator nodes natively execute WebAuthn verification via the **Secp256r1 Precompile**:
+To prevent backdoor vulnerabilities and enforce defense-in-depth, Haptix enforces strict operational separation:
 
-* **Precompile Program ID**: `Secp256r1SigVerify1111111111111111111111111`
-* **On-Chain Anchor Program**: `9wC1ok8d4PrBDG3TS7iyEu9QxMCYv6BKrdLb3q4yZbke`
-
-### Solana Atomic Transaction Bundle
-
-Every transfer is structured as an atomic instruction bundle executed in the exact same Solana slot:
-
-```text
-┌────────────────────────────────────────────────────────────────────────┐
-│                      SOLANA ATOMIC TRANSACTION                         │
-│                                                                        │
-│  [Instruction 0: Secp256r1SigVerify Precompile]                        │
-│   ├── Compact P-256 Signature (64B: r + s enforcing canonical low-S)   │
-│   ├── Compressed Public Key (33B SEC1: 0x02 / 0x03)                    │
-│   └── 40-Byte Payload [Recipient (32B) | Amount Lamports (8B LE)]      │
-│                                                                        │
-│  [Instruction 1: Haptix Anchor Program (execute_transfer)]              │
-│   ├── Introspects solana_program::sysvar::instructions                 │
-│   ├── Verifies precompile validated exact public key & message         │
-│   ├── Validates caller authority & on-chain spending threshold         │
-│   └── Signs and transfers funds via PDA seeds                          │
-└────────────────────────────────────────────────────────────────────────┘
-```
+| Role | Key Type | Privileges & Constraints |
+| :--- | :--- | :--- |
+| **Primary Passkey** | NIST P-256 (WebAuthn) | Routine transfers (\le Spend Threshold), 1-tap biometrics. |
+| **Secondary Passkey (Vault Key)** | NIST P-256 (WebAuthn) | Co-signs transfers (> Spend Threshold) and on-chain policy updates. |
+| **Recovery Guardian** | Independent Solana Keypair | Freeze wallet, initiate 24-hour timelocked key rotation. **Cannot spend funds.** |
+| **Relayer (Fee Payer)** | Ed25519 System Keypair | Pays network transaction & rent fees ONLY. **Cannot sign for wallet PDA.** |
+| **Program Upgrade Authority** | BPF Upgradeable Loader | Upgradable on Devnet; timelocked Squads v4 multisig on Mainnet. |
 
 ---
 
-## 3 Core Security Invariants
+## 2. What-You-See-Is-What-You-Sign (WYSIWYS)
 
-### 1. Instructions Sysvar Introspection
-The Haptix Anchor program inspects the Solana `sysvar::instructions` account directly in memory to confirm that `Secp256r1SigVerify` succeeded at index `0` within the exact same transaction. A signature verified in a previous transaction or different block cannot be replayed.
+Both the mobile client and passkey engine enforce strict payload inspection before user verification or invoking the device enclave:
 
-### 2. Strict Payload Binding
-The precompile message must match the exact 40-byte sequence `[Recipient (32B) | Amount (8B LE)]` expected by the Anchor transfer handler. Any tampering with recipient address or amount causes immediate instruction revert.
+### A. Pre-Signature Binary Validation
+Arbitrary binary payloads and blind hashes are rejected immediately with a security exception. Every authorized instruction requires an exact byte length:
 
-### 3. Canonical Low-S Enforcement
-To guarantee signature immutability, all P-256 signatures must satisfy $s \le n/2$. High-$S$ signatures emitted by certain Android authenticators are normalized ($s' = n - s$) before submission to the Solana runtime.
+| Instruction | Exact Payload Length | Validated Elements |
+| :--- | :--- | :--- |
+| `TRANSFER` | **97 Bytes** | Cluster tag, recipient (bytes 57..89), amount (bytes 89..97) |
+| `SET_GUARDIAN` | **93 Bytes** | Cluster tag, proposed guardian pubkey, auth nonce |
+| `SET_THRESHOLD` | **70 Bytes** | Cluster tag, new threshold lamports (u64 LE), auth nonce |
+| `GRANT_AGENT` | **140 Bytes** | Cluster tag, agent pubkey, spend allowance, expiry timestamp |
+| `REVOKE_AGENT` | **93 Bytes** | Cluster tag, revoked agent pubkey, auth nonce |
+| `UNFREEZE_WALLET`| **64 Bytes** | Cluster tag, wallet PDA, auth nonce |
+| `CANCEL_RECOVERY`| **64 Bytes** | Cluster tag, wallet PDA, auth nonce |
+
+### B. Display Consistency Verification
+The recipient address and amount displayed on screen are cross-verified against the recipient (bytes 57..89) and amount (bytes 89..97) decoded from the 97-byte message buffer. If the on-screen recipient or amount differs from the byte payload, signing is immediately aborted.
 
 ---
 
-## Program-Derived Address (PDA) Invariance
+## 3. Autonomous Agent Hot-Key Budgets
 
-Every Haptix wallet is an off-curve Program Derived Address:
+Haptix provides native session key grants for AI agents (e.g., Jupiter Auto-DCA, trading algorithms):
 
-```typescript
-const [walletPda, bump] = PublicKey.findProgramAddressSync(
-  [Buffer.from("haptix_wallet"), walletSeed.toBuffer()],
-  HAPTIX_PROGRAM_ID
-);
-```
+- **Autonomous Allowance**: Once granted via a 2-of-2 hardware passkey quorum, an agent key can sign transactions without prompting for biometrics, up to its explicit budget cap.
+- **Budget Isolation**: The agent's allowance is an independent budget that does **not** count against or consume the human owner's daily spend threshold.
+- **Time-Bounded Expiry**: Agent sessions enforce short expiration timestamps (e.g., 1h to 24h).
+- **Instant Revocation**: Owners can revoke an agent session at any time. Revocation remains fully operational even if the wallet is locked/frozen.
 
-Because the address is an off-curve PDA, **no private key exists that can drain the wallet**. Only the Anchor program can execute transfers, strictly governed by your verified biometric passkeys and spending limit rules.
+---
+
+## 4. Cluster Binding & Replay Prevention
+
+1. **8-Byte Cluster Tag**: Every signed message includes an 8-byte ASCII cluster identifier (`devnet\0\0` or `mainnet\0`). On-chain programs reject authorization messages where the embedded cluster tag does not match the account's bound cluster.
+2. **Domain Separation**: Devnet currently operates under Program ID `9wC1ok8d4PrBDG3TS7iyEu9QxMCYv6BKrdLb3q4yZbke`. Mainnet production deployment will mint an independent Program ID to guarantee physical instruction domain separation.
+3. **Sequential Auth Nonces**: Every state-changing owner authorization increments an on-chain `auth_nonce`, preventing replay of previously captured WebAuthn assertions.
